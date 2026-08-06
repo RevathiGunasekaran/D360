@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meridian Health Patient Portal (Lab)</title>
+
+  <!-- ============================================================
+       PASTE THE WEB SDK SNIPPET DATA CLOUD GENERATES FOR YOU HERE.
+       You get this from: Data Cloud Setup > Websites & Mobile Apps
+       > [your connector] > Deploy > "View Snippet" (or similar).
+       It will look roughly like this (DO NOT use this fake one —
+       replace with your real tenant-specific snippet):
+
+       <script src="https://cdn.c360a.salesforce.com/beacon/c360a/xxxxxxxx/scripts/c360a.min.js"></script>
+       <script>
+         window.sfdcInteractions = window.sfdcInteractions || [];
+         sfdcInteractions.init("YOUR_TENANT_ID", "YOUR_CONNECTOR_ID");
+       </script>
+
+       Everything below this comment (the sendEvent calls) will not
+       actually reach Data Cloud until the real snippet is in place —
+       until then, open DevTools Console and you'll see the calls
+       logged/queued but not delivered.
+       ============================================================ -->
+
+  <style>
+    body { font-family: -apple-system, Arial, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; }
+    h1 { font-size: 22px; }
+    section { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    label { display: block; margin-top: 10px; font-size: 14px; font-weight: 600; }
+    input { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+    button { margin-top: 14px; padding: 10px 16px; border: none; border-radius: 6px; background: #0176d3; color: white; font-size: 14px; cursor: pointer; }
+    button:hover { background: #014486; }
+    button.secondary { background: #706e6b; }
+    #log { background: #f4f4f4; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 12px; white-space: pre-wrap; max-height: 220px; overflow-y: auto; }
+    .status { font-size: 12px; color: #706e6b; margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+  <h1>Meridian Health — Patient Portal (Lab Simulation)</h1>
+  <p class="status">Open DevTools &rarr; Console/Network tab to watch each event fire.</p>
+
+  <!-- ============================================================
+       SECTION 1: LOGIN / PROFILE EVENT
+       Captures name/email/phone. This is the only place identity
+       fields ever get sent — nothing is scraped passively.
+       ============================================================ -->
+  <section>
+    <h2>1. Patient Login</h2>
+    <form id="loginForm">
+      <label for="firstName">First Name</label>
+      <input type="text" id="firstName" value="Maria" required />
+
+      <label for="lastName">Last Name</label>
+      <input type="text" id="lastName" value="Gonzalez" required />
+
+      <label for="email">Email</label>
+      <input type="email" id="email" value="maria.gonzalez@webmail.com" required />
+
+      <label for="phone">Phone</label>
+      <input type="tel" id="phone" value="617-555-0198" required />
+
+      <button type="submit">Log In</button>
+    </form>
+    <p class="status" id="loginStatus">Not logged in yet — try other buttons below to see anonymous (deviceId-only) events first.</p>
+  </section>
+
+  <!-- ============================================================
+       SECTION 2: ENGAGEMENT EVENTS
+       Custom interaction events, fired on click.
+       ============================================================ -->
+  <section>
+    <h2>2. Portal Actions</h2>
+    <button onclick="fireEngagementEvent('appointmentClick', '/book-appointment', { appointmentType: 'Endocrinology Follow-up' })">
+      Book Endocrinology Follow-up
+    </button>
+    <br/>
+    <button onclick="fireEngagementEvent('prescriptionRefillClick', '/rx/refill', { drugName: 'Metformin 500mg' })">
+      Refill Prescription
+    </button>
+    <br/>
+    <button onclick="fireEngagementEvent('pageView', '/symptom-checker/diabetes', {})">
+      View Diabetes Symptom Checker (simulate page view)
+    </button>
+  </section>
+
+  <!-- ============================================================
+       SECTION 3: CONSENT EVENTS
+       Feeds the Consent API / Contact Point Consent use case.
+       ============================================================ -->
+  <section>
+    <h2>3. Marketing Consent</h2>
+    <button onclick="fireConsentEvent('OptIn')">Yes, send me appointment reminders</button>
+    <button class="secondary" onclick="fireConsentEvent('OptOut')">No thanks</button>
+  </section>
+
+  <section>
+    <h2>Event Log (local, for your own debugging)</h2>
+    <div id="log">Waiting for events...</div>
+  </section>
+
+  <script>
+    // ============================================================
+    // A safe fallback so this page doesn't error out before you've
+    // pasted the real SDK snippet in — remove this block once the
+    // real sfdcInteractions object from Data Cloud is in place.
+    // ============================================================
+    window.sfdcInteractions = window.sfdcInteractions || {
+      sendEvent: function (payload) {
+        console.warn("[MOCK sfdcInteractions] Real Web SDK snippet not installed yet. Payload that WOULD have been sent:", payload);
+      }
+    };
+
+    let isLoggedIn = false;
+    let currentIndividual = null;
+
+    function logToPage(label, payload) {
+      const logEl = document.getElementById("log");
+      const time = new Date().toLocaleTimeString();
+      logEl.textContent = `[${time}] ${label}\n${JSON.stringify(payload, null, 2)}\n\n` + logEl.textContent;
+    }
+
+    // ------------------------------------------------------------
+    // SECTION 1: Login -> profile event
+    // ------------------------------------------------------------
+    document.getElementById("loginForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      currentIndividual = {
+        firstName: document.getElementById("firstName").value,
+        lastName: document.getElementById("lastName").value,
+        email: document.getElementById("email").value,
+        phone: document.getElementById("phone").value
+      };
+      isLoggedIn = true;
+
+      const payload = {
+        eventType: "profile",
+        timestamp: new Date().toISOString(),
+        individual: currentIndividual
+        // device.deviceId is attached automatically by the real SDK — not something you set here
+      };
+
+      sfdcInteractions.sendEvent(payload);
+      logToPage("PROFILE EVENT (login)", payload);
+
+      document.getElementById("loginStatus").textContent =
+        `Logged in as ${currentIndividual.firstName} ${currentIndividual.lastName}. Subsequent events will now be tied to this identity.`;
+    });
+
+    // ------------------------------------------------------------
+    // SECTION 2: Engagement events (page view / custom clicks)
+    // ------------------------------------------------------------
+    function fireEngagementEvent(eventName, pageUrl, customFields) {
+      const payload = {
+        eventType: "engagement",
+        eventName: eventName,
+        timestamp: new Date().toISOString(),
+        interaction: {
+          category: "Engagement",
+          page: { url: pageUrl },
+          custom: customFields
+        }
+      };
+      // If logged in, the real SDK ties this to the identified individual via the
+      // persisted deviceId from the profile event above — you don't need to
+      // re-send name/email on every click.
+      sfdcInteractions.sendEvent(payload);
+      logToPage(`ENGAGEMENT EVENT: ${eventName}`, payload);
+    }
+
+    // ------------------------------------------------------------
+    // SECTION 3: Consent events
+    // ------------------------------------------------------------
+    function fireConsentEvent(status) {
+      const payload = {
+        eventType: "engagement",
+        eventName: "consentOptIn", // same event name for both opt-in/opt-out; status field distinguishes
+        timestamp: new Date().toISOString(),
+        interaction: {
+          category: "Profile",
+          custom: {
+            consentType: "Marketing Outreach",
+            consentStatus: status
+          }
+        }
+      };
+      sfdcInteractions.sendEvent(payload);
+      logToPage(`CONSENT EVENT: ${status}`, payload);
+    }
+
+    // ------------------------------------------------------------
+    // Automatic page view on load — this is what the real SDK does
+    // by itself with zero code once installed; simulated here so
+    // the mock behaves the same way for local testing.
+    // ------------------------------------------------------------
+    window.addEventListener("load", function () {
+      fireEngagementEvent("pageView", window.location.pathname || "/", {});
+    });
+  </script>
+
+</body>
+</html>
