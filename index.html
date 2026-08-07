@@ -1,27 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meridian Health Patient Portal (Lab)</title>
-
+  
   <!-- REAL generated snippet — left exactly as Data Cloud gave it, untouched -->
   <script src="https://cdn.c360a.salesforce.com/beacon/c360a/f1e628d9-723e-4f16-9168-d92bf456b935/scripts/c360a.min.js"
-          onload="window.__sdkScriptLoaded = true; logToPage('SDK SCRIPT', 'c360a.min.js loaded successfully');"
-          onerror="window.__sdkScriptLoaded = false; logToPage('SDK SCRIPT ERROR', 'c360a.min.js FAILED to load — check network tab / ad blocker / CORS');">
+        onload="window.__sdkScriptLoaded = true;"
+        onerror="window.__sdkScriptLoaded = false; console.error('c360a.min.js failed to load');">
   </script>
   <script>
-    window.sfdcInteractions = window.sfdcInteractions || [];
-    try {
-      sfdcInteractions.init("g4ztkm3gmvtdsnbshfrtczldm8", "f1e628d9-723e-4f16-9168-d92bf456b935");
-    } catch (err) {
-      // If the SDK script hasn't finished loading/initializing yet, sfdcInteractions may
-      // still be a plain array here, and .init() on an array throws. Catching it means the
-      // page keeps running instead of an uncaught exception blocking everything below.
-      console.warn("sfdcInteractions.init() failed (SDK likely not ready yet):", err);
-    }
+  window.sfdcInteractions = window.sfdcInteractions || [];
+  try {
+    sfdcInteractions.init("g4ztkm3gmvtdsnbshfrtczldm8", "f1e628d9-723e-4f16-9168-d92bf456b935");
+  } catch (err) {
+    console.warn("sfdcInteractions.init() failed:", err);
+  }
   </script>
-
+  
   <style>
     body { font-family: -apple-system, Arial, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; }
     h1 { font-size: 22px; }
@@ -35,33 +32,33 @@
     .status { font-size: 12px; color: #706e6b; margin-top: 6px; }
     .warn { color: #b30000; font-weight: 600; }
   </style>
-</head>
-<body>
-
+  </head>
+  <body>
+  
   <h1>Meridian Health — Patient Portal (Lab Simulation)</h1>
   <p class="status">Open DevTools &rarr; Console/Network tab to watch each event fire.</p>
   <p class="status" id="sdkStatus">Checking SDK status...</p>
-
+  
   <section>
     <h2>1. Patient Login</h2>
     <form id="loginForm">
       <label for="firstName">First Name</label>
       <input type="text" id="firstName" value="Maria" required />
-
+  
       <label for="lastName">Last Name</label>
       <input type="text" id="lastName" value="Gonzalez" required />
-
+  
       <label for="email">Email</label>
       <input type="email" id="email" value="maria.gonzalez@webmail.com" required />
-
+  
       <label for="phone">Phone</label>
       <input type="tel" id="phone" value="617-555-0198" required />
-
+  
       <button type="submit">Log In</button>
     </form>
     <p class="status" id="loginStatus">Not logged in yet — try other buttons below to see anonymous (deviceId-only) events first.</p>
   </section>
-
+  
   <section>
     <h2>2. Portal Actions</h2>
     <button onclick="fireEngagementEvent('appointmentClick', '/book-appointment', { appointmentType: 'Endocrinology Follow-up' })">
@@ -76,29 +73,29 @@
       View Diabetes Symptom Checker (simulate page view)
     </button>
   </section>
-
+  
   <section>
     <h2>3. Marketing Consent</h2>
     <button onclick="fireConsentEvent('OptIn')">Yes, send me appointment reminders</button>
     <button class="secondary" onclick="fireConsentEvent('OptOut')">No thanks</button>
   </section>
-
+  
   <section>
     <h2>Event Log</h2>
     <div id="log">Waiting for events...</div>
   </section>
-
+  
   <script>
     let isLoggedIn = false;
     let currentIndividual = null;
-
+  
     function logToPage(label, payload) {
       const logEl = document.getElementById("log");
       const time = new Date().toLocaleTimeString();
       const text = typeof payload === "string" ? payload : JSON.stringify(payload, null, 2);
       logEl.textContent = `[${time}] ${label}\n${text}\n\n` + logEl.textContent;
     }
-
+  
     // ------------------------------------------------------------
     // THE KEY FIX: never call sfdcInteractions.sendEvent() directly.
     // Always go through this guarded wrapper, which checks the SDK
@@ -109,7 +106,7 @@
       const sdkReady =
         window.sfdcInteractions &&
         typeof window.sfdcInteractions.sendEvent === "function";
-
+  
       if (!sdkReady) {
         logToPage(`${label} — NOT SENT`, {
           reason: "SDK not ready yet (still loading, blocked, or init() hasn't completed)",
@@ -117,7 +114,7 @@
         });
         return;
       }
-
+  
       try {
         window.sfdcInteractions.sendEvent(payload);
         logToPage(label, payload);
@@ -125,7 +122,7 @@
         logToPage(`${label} — ERROR`, { error: String(err), payload: payload });
       }
     }
-
+  
     // ------------------------------------------------------------
     // Check SDK readiness a moment after page load and show it on screen,
     // so you don't have to guess whether it's working from the log alone.
@@ -136,7 +133,7 @@
         const sdkReady =
           window.sfdcInteractions &&
           typeof window.sfdcInteractions.sendEvent === "function";
-
+  
         if (window.__sdkScriptLoaded === false) {
           statusEl.innerHTML = '<span class="warn">SDK script failed to load — check Network tab for a blocked/failed request to cdn.c360a.salesforce.com</span>';
         } else if (sdkReady) {
@@ -146,13 +143,13 @@
         }
       }, 1000); // small delay to let async init finish before checking
     });
-
+  
     // ------------------------------------------------------------
     // SECTION 1: Login -> profile event
     // ------------------------------------------------------------
     document.getElementById("loginForm").addEventListener("submit", function (e) {
       e.preventDefault();
-
+  
       currentIndividual = {
         firstName: document.getElementById("firstName").value,
         lastName: document.getElementById("lastName").value,
@@ -160,55 +157,45 @@
         phone: document.getElementById("phone").value
       };
       isLoggedIn = true;
-
+  
       const payload = {
         eventType: "profile",
         timestamp: new Date().toISOString(),
         individual: currentIndividual
       };
-
+  
       safeSendEvent(payload, "PROFILE EVENT (login)");
-
+  
       document.getElementById("loginStatus").textContent =
         `Logged in as ${currentIndividual.firstName} ${currentIndividual.lastName}. Subsequent events will now be tied to this identity.`;
     });
-
+  
     // ------------------------------------------------------------
     // SECTION 2: Engagement events (page view / custom clicks)
     // ------------------------------------------------------------
-    function fireEngagementEvent(eventName, pageUrl, customFields) {
-      const payload = {
-        eventType: "engagement",
+    function fireEngagementEvent(eventName, pageUrl) {
+    safeSendEvent({
+      eventType: "patientEngagement",     // <-- must match the schema's developerName exactly
+      data: {
         eventName: eventName,
-        timestamp: new Date().toISOString(),
-        interaction: {
-          category: "Engagement",
-          page: { url: pageUrl },
-          custom: customFields
-        }
-      };
-      safeSendEvent(payload, `ENGAGEMENT EVENT: ${eventName}`);
-    }
-
+        pageUrl: pageUrl
+      }
+    }, `ENGAGEMENT EVENT: ${eventName}`);
+  }
+  
     // ------------------------------------------------------------
     // SECTION 3: Consent events
     // ------------------------------------------------------------
     function fireConsentEvent(status) {
-      const payload = {
-        eventType: "engagement",
-        eventName: "consentOptIn",
-        timestamp: new Date().toISOString(),
-        interaction: {
-          category: "Profile",
-          custom: {
-            consentType: "Marketing Outreach",
-            consentStatus: status
-          }
-        }
-      };
-      safeSendEvent(payload, `CONSENT EVENT: ${status}`);
-    }
-
+    safeSendEvent({
+      eventType: "consentLog",            // <-- must match the schema's developerName exactly
+      data: {
+        purpose: "Marketing Outreach",
+        status: status                     // "OptIn" or "OptOut"
+      }
+    }, `CONSENT EVENT: ${status}`);
+  }
+  
     // ------------------------------------------------------------
     // Automatic page view on load
     // ------------------------------------------------------------
@@ -216,6 +203,6 @@
       fireEngagementEvent("pageView", window.location.pathname || "/", {});
     });
   </script>
-
-</body>
-</html>
+  
+  </body>
+  </html>
