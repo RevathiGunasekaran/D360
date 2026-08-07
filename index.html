@@ -6,18 +6,17 @@
   <title>Meridian Health Patient Portal (Lab)</title>
   
   <!-- REAL generated snippet — left exactly as Data Cloud gave it, untouched -->
-  <script src="https://cdn.c360a.salesforce.com/beacon/c360a/f1e628d9-723e-4f16-9168-d92bf456b935/scripts/c360a.min.js"
-        onload="window.__sdkScriptLoaded = true;"
-        onerror="window.__sdkScriptLoaded = false; console.error('c360a.min.js failed to load');">
-  </script>
-  <script>
+ <script src="https://cdn.c360a.salesforce.com/beacon/c360a/f1e628d9-723e-4f16-9168-d92bf456b935/scripts/c360a.min.js"></script>
+<script>
   window.sfdcInteractions = window.sfdcInteractions || [];
-  try {
-    sfdcInteractions.init("g4ztkm3gmvtdsnbshfrtczldm8", "f1e628d9-723e-4f16-9168-d92bf456b935");
-  } catch (err) {
-    console.warn("sfdcInteractions.init() failed:", err);
-  }
-  </script>
+
+  // No arguments here — tenant & connector come from the script URL
+  sfdcInteractions.init().then(() => {
+    console.log("Data 360 Web SDK initialized successfully");
+  }).catch(err => {
+    console.error("Data 360 Web SDK init failed:", err);
+  });
+</script>
   
   <style>
     body { font-family: -apple-system, Arial, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; }
@@ -148,53 +147,75 @@
     // SECTION 1: Login -> profile event
     // ------------------------------------------------------------
     document.getElementById("loginForm").addEventListener("submit", function (e) {
-      e.preventDefault();
-  
-      currentIndividual = {
-        firstName: document.getElementById("firstName").value,
-        lastName: document.getElementById("lastName").value,
-        email: document.getElementById("email").value,
-        phone: document.getElementById("phone").value
-      };
-      isLoggedIn = true;
-  
-      const payload = {
-        eventType: "profile",
-        timestamp: new Date().toISOString(),
-        individual: currentIndividual
-      };
-  
-      safeSendEvent(payload, "PROFILE EVENT (login)");
-  
-      document.getElementById("loginStatus").textContent =
-        `Logged in as ${currentIndividual.firstName} ${currentIndividual.lastName}. Subsequent events will now be tied to this identity.`;
-    });
+  e.preventDefault();
+
+  currentIndividual = {
+    firstName: document.getElementById("firstName").value,
+    lastName: document.getElementById("lastName").value,
+    email: document.getElementById("email").value,
+    phone: document.getElementById("phone").value
+  };
+  isLoggedIn = true;
+
+  fireIdentityEvent();
+
+  document.getElementById("loginStatus").textContent =
+    `Logged in as ${currentIndividual.firstName} ${currentIndividual.lastName}. Subsequent events will now be tied to this identity.`;
+});
   
     // ------------------------------------------------------------
     // SECTION 2: Engagement events (page view / custom clicks)
     // ------------------------------------------------------------
-    function fireEngagementEvent(eventName, pageUrl) {
-    safeSendEvent({
-      eventType: "patientEngagement",     // <-- must match the schema's developerName exactly
-      data: {
-        eventName: eventName,
-        pageUrl: pageUrl
-      }
-    }, `ENGAGEMENT EVENT: ${eventName}`);
-  }
+    function fireEngagementEvent(eventName, pageUrl, customFields = {}) {
+  const payload = {
+    eventType: "patientEngagement",
+    category: "Engagement",
+    dateTime: new Date().toISOString(),
+    deviceId: window.sfdcInteractions.getDeviceId?.() || "unknown",
+    eventId: "ENG-" + Date.now() + "-" + Math.random().toString(36).slice(2),
+    sessionId: window.sfdcInteractions.getSessionId?.() || "unknown",
+    eventName: eventName,
+    pageUrl: pageUrl,
+    ...customFields
+  };
+
+  safeSendEvent(payload, `ENGAGEMENT EVENT: ${eventName}`);
+}
   
     // ------------------------------------------------------------
     // SECTION 3: Consent events
     // ------------------------------------------------------------
-    function fireConsentEvent(status) {
-    safeSendEvent({
-      eventType: "consentLog",            // <-- must match the schema's developerName exactly
-      data: {
-        purpose: "Marketing Outreach",
-        status: status                     // "OptIn" or "OptOut"
-      }
-    }, `CONSENT EVENT: ${status}`);
-  }
+   function fireConsentEvent(status) {
+  const payload = {
+    eventType: "consentLog",
+    category: "Engagement",
+    dateTime: new Date().toISOString(),
+    deviceId: window.sfdcInteractions.getDeviceId?.() || "unknown",
+    eventId: "CON-" + Date.now() + "-" + Math.random().toString(36).slice(2),
+    sessionId: window.sfdcInteractions.getSessionId?.() || "unknown",
+    purpose: "Marketing Outreach",
+    status: status
+  };
+
+  safeSendEvent(payload, `CONSENT EVENT: ${status}`);
+}
+    function fireIdentityEvent() {
+  const payload = {
+    eventType: "identity",
+    category: "Profile",
+    dateTime: new Date().toISOString(),
+    deviceId: window.sfdcInteractions.getDeviceId?.() || "unknown",
+    eventId: "ID-" + Date.now(),
+    sessionId: window.sfdcInteractions.getSessionId?.() || "unknown",
+    isAnonymous: isLoggedIn ? 0 : 1,
+    firstName: currentIndividual?.firstName || "",
+    lastName: currentIndividual?.lastName || "",
+    email: currentIndividual?.email || "",
+    phoneNumber: currentIndividual?.phone || ""
+  };
+
+  safeSendEvent(payload, "IDENTITY EVENT");
+}
   
     // ------------------------------------------------------------
     // Automatic page view on load
