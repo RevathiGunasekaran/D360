@@ -4,8 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meridian Health Patient Portal (Lab)</title>
-  <script src="https://cdn.c360a.salesforce.com/beacon/c360a/f1e628d9-723e-4f16-9168-d92bf456b935/scripts/c360a.min.js"></script>
-
+ <script src="https://cdn.c360a.salesforce.com/beacon/c360a/f1e628d9-723e-4f16-9168-d92bf456b935/scripts/c360a.min.js"></script>
+       <script>
+         window.sfdcInteractions = window.sfdcInteractions || [];
+         sfdcInteractions.init("g4ztkm3gmvtdsnbshfrtczldm8", "f1e628d9-723e-4f16-9168-d92bf456b935");
+       </script>
   <!-- ============================================================
        PASTE THE WEB SDK SNIPPET DATA CLOUD GENERATES FOR YOU HERE.
        You get this from: Data Cloud Setup > Websites & Mobile Apps
@@ -16,7 +19,7 @@
        <script src="https://cdn.c360a.salesforce.com/beacon/c360a/f1e628d9-723e-4f16-9168-d92bf456b935/scripts/c360a.min.js"></script>
        <script>
          window.sfdcInteractions = window.sfdcInteractions || [];
-         sfdcInteractions.init("YOUR_TENANT_ID", "YOUR_CONNECTOR_ID");
+         sfdcInteractions.init("g4ztkm3gmvtdsnbshfrtczldm8", "f1e628d9-723e-4f16-9168-d92bf456b935");
        </script>
 
        Everything below this comment (the sendEvent calls) will not
@@ -108,11 +111,11 @@
     // pasted the real SDK snippet in — remove this block once the
     // real sfdcInteractions object from Data Cloud is in place.
     // ============================================================
-    window.sfdcInteractions = window.sfdcInteractions || {
-      sendEvent: function (payload) {
-        console.warn("[MOCK sfdcInteractions] Real Web SDK snippet not installed yet. Payload that WOULD have been sent:", payload);
-      }
-    };
+   // window.sfdcInteractions = window.sfdcInteractions || {
+    //  sendEvent: function (payload) {
+     //   console.warn("[MOCK sfdcInteractions] Real Web SDK snippet not installed yet. Payload that WOULD have been sent:", payload);
+    //  }
+   // };
 
     let isLoggedIn = false;
     let currentIndividual = null;
