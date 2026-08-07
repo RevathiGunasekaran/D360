@@ -4,29 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meridian Health Patient Portal (Lab)</title>
- <script src="https://cdn.c360a.salesforce.com/beacon/c360a/f1e628d9-723e-4f16-9168-d92bf456b935/scripts/c360a.min.js"></script>
-       <script>
-         window.sfdcInteractions = window.sfdcInteractions || [];
-         sfdcInteractions.init("g4ztkm3gmvtdsnbshfrtczldm8", "f1e628d9-723e-4f16-9168-d92bf456b935");
-       </script>
-  <!-- ============================================================
-       PASTE THE WEB SDK SNIPPET DATA CLOUD GENERATES FOR YOU HERE.
-       You get this from: Data Cloud Setup > Websites & Mobile Apps
-       > [your connector] > Deploy > "View Snippet" (or similar).
-       It will look roughly like this (DO NOT use this fake one —
-       replace with your real tenant-specific snippet):
 
-       <script src="https://cdn.c360a.salesforce.com/beacon/c360a/f1e628d9-723e-4f16-9168-d92bf456b935/scripts/c360a.min.js"></script>
-       <script>
-         window.sfdcInteractions = window.sfdcInteractions || [];
-         sfdcInteractions.init("g4ztkm3gmvtdsnbshfrtczldm8", "f1e628d9-723e-4f16-9168-d92bf456b935");
-       </script>
-
-       Everything below this comment (the sendEvent calls) will not
-       actually reach Data Cloud until the real snippet is in place —
-       until then, open DevTools Console and you'll see the calls
-       logged/queued but not delivered.
-       ============================================================ -->
+  <!-- REAL generated snippet — left exactly as Data Cloud gave it, untouched -->
+  <script src="https://cdn.c360a.salesforce.com/beacon/c360a/f1e628d9-723e-4f16-9168-d92bf456b935/scripts/c360a.min.js"
+          onload="window.__sdkScriptLoaded = true; logToPage('SDK SCRIPT', 'c360a.min.js loaded successfully');"
+          onerror="window.__sdkScriptLoaded = false; logToPage('SDK SCRIPT ERROR', 'c360a.min.js FAILED to load — check network tab / ad blocker / CORS');">
+  </script>
+  <script>
+    window.sfdcInteractions = window.sfdcInteractions || [];
+    try {
+      sfdcInteractions.init("g4ztkm3gmvtdsnbshfrtczldm8", "f1e628d9-723e-4f16-9168-d92bf456b935");
+    } catch (err) {
+      // If the SDK script hasn't finished loading/initializing yet, sfdcInteractions may
+      // still be a plain array here, and .init() on an array throws. Catching it means the
+      // page keeps running instead of an uncaught exception blocking everything below.
+      console.warn("sfdcInteractions.init() failed (SDK likely not ready yet):", err);
+    }
+  </script>
 
   <style>
     body { font-family: -apple-system, Arial, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; }
@@ -39,18 +33,15 @@
     button.secondary { background: #706e6b; }
     #log { background: #f4f4f4; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 12px; white-space: pre-wrap; max-height: 220px; overflow-y: auto; }
     .status { font-size: 12px; color: #706e6b; margin-top: 6px; }
+    .warn { color: #b30000; font-weight: 600; }
   </style>
 </head>
 <body>
 
   <h1>Meridian Health — Patient Portal (Lab Simulation)</h1>
   <p class="status">Open DevTools &rarr; Console/Network tab to watch each event fire.</p>
+  <p class="status" id="sdkStatus">Checking SDK status...</p>
 
-  <!-- ============================================================
-       SECTION 1: LOGIN / PROFILE EVENT
-       Captures name/email/phone. This is the only place identity
-       fields ever get sent — nothing is scraped passively.
-       ============================================================ -->
   <section>
     <h2>1. Patient Login</h2>
     <form id="loginForm">
@@ -71,10 +62,6 @@
     <p class="status" id="loginStatus">Not logged in yet — try other buttons below to see anonymous (deviceId-only) events first.</p>
   </section>
 
-  <!-- ============================================================
-       SECTION 2: ENGAGEMENT EVENTS
-       Custom interaction events, fired on click.
-       ============================================================ -->
   <section>
     <h2>2. Portal Actions</h2>
     <button onclick="fireEngagementEvent('appointmentClick', '/book-appointment', { appointmentType: 'Endocrinology Follow-up' })">
@@ -90,10 +77,6 @@
     </button>
   </section>
 
-  <!-- ============================================================
-       SECTION 3: CONSENT EVENTS
-       Feeds the Consent API / Contact Point Consent use case.
-       ============================================================ -->
   <section>
     <h2>3. Marketing Consent</h2>
     <button onclick="fireConsentEvent('OptIn')">Yes, send me appointment reminders</button>
@@ -101,30 +84,68 @@
   </section>
 
   <section>
-    <h2>Event Log (local, for your own debugging)</h2>
+    <h2>Event Log</h2>
     <div id="log">Waiting for events...</div>
   </section>
 
   <script>
-    // ============================================================
-    // A safe fallback so this page doesn't error out before you've
-    // pasted the real SDK snippet in — remove this block once the
-    // real sfdcInteractions object from Data Cloud is in place.
-    // ============================================================
-   // window.sfdcInteractions = window.sfdcInteractions || {
-    //  sendEvent: function (payload) {
-     //   console.warn("[MOCK sfdcInteractions] Real Web SDK snippet not installed yet. Payload that WOULD have been sent:", payload);
-    //  }
-   // };
-
     let isLoggedIn = false;
     let currentIndividual = null;
 
     function logToPage(label, payload) {
       const logEl = document.getElementById("log");
       const time = new Date().toLocaleTimeString();
-      logEl.textContent = `[${time}] ${label}\n${JSON.stringify(payload, null, 2)}\n\n` + logEl.textContent;
+      const text = typeof payload === "string" ? payload : JSON.stringify(payload, null, 2);
+      logEl.textContent = `[${time}] ${label}\n${text}\n\n` + logEl.textContent;
     }
+
+    // ------------------------------------------------------------
+    // THE KEY FIX: never call sfdcInteractions.sendEvent() directly.
+    // Always go through this guarded wrapper, which checks the SDK
+    // is actually ready and catches any error instead of throwing
+    // an uncaught exception that could break the rest of the page.
+    // ------------------------------------------------------------
+    function safeSendEvent(payload, label) {
+      const sdkReady =
+        window.sfdcInteractions &&
+        typeof window.sfdcInteractions.sendEvent === "function";
+
+      if (!sdkReady) {
+        logToPage(`${label} — NOT SENT`, {
+          reason: "SDK not ready yet (still loading, blocked, or init() hasn't completed)",
+          wouldHaveSent: payload
+        });
+        return;
+      }
+
+      try {
+        window.sfdcInteractions.sendEvent(payload);
+        logToPage(label, payload);
+      } catch (err) {
+        logToPage(`${label} — ERROR`, { error: String(err), payload: payload });
+      }
+    }
+
+    // ------------------------------------------------------------
+    // Check SDK readiness a moment after page load and show it on screen,
+    // so you don't have to guess whether it's working from the log alone.
+    // ------------------------------------------------------------
+    window.addEventListener("load", function () {
+      setTimeout(function () {
+        const statusEl = document.getElementById("sdkStatus");
+        const sdkReady =
+          window.sfdcInteractions &&
+          typeof window.sfdcInteractions.sendEvent === "function";
+
+        if (window.__sdkScriptLoaded === false) {
+          statusEl.innerHTML = '<span class="warn">SDK script failed to load — check Network tab for a blocked/failed request to cdn.c360a.salesforce.com</span>';
+        } else if (sdkReady) {
+          statusEl.textContent = "SDK ready — sendEvent calls will actually reach Data Cloud.";
+        } else {
+          statusEl.innerHTML = '<span class="warn">SDK script loaded but sendEvent is not available yet — init() may have failed. Check console.</span>';
+        }
+      }, 1000); // small delay to let async init finish before checking
+    });
 
     // ------------------------------------------------------------
     // SECTION 1: Login -> profile event
@@ -144,11 +165,9 @@
         eventType: "profile",
         timestamp: new Date().toISOString(),
         individual: currentIndividual
-        // device.deviceId is attached automatically by the real SDK — not something you set here
       };
 
-      sfdcInteractions.sendEvent(payload);
-      logToPage("PROFILE EVENT (login)", payload);
+      safeSendEvent(payload, "PROFILE EVENT (login)");
 
       document.getElementById("loginStatus").textContent =
         `Logged in as ${currentIndividual.firstName} ${currentIndividual.lastName}. Subsequent events will now be tied to this identity.`;
@@ -168,11 +187,7 @@
           custom: customFields
         }
       };
-      // If logged in, the real SDK ties this to the identified individual via the
-      // persisted deviceId from the profile event above — you don't need to
-      // re-send name/email on every click.
-      sfdcInteractions.sendEvent(payload);
-      logToPage(`ENGAGEMENT EVENT: ${eventName}`, payload);
+      safeSendEvent(payload, `ENGAGEMENT EVENT: ${eventName}`);
     }
 
     // ------------------------------------------------------------
@@ -181,7 +196,7 @@
     function fireConsentEvent(status) {
       const payload = {
         eventType: "engagement",
-        eventName: "consentOptIn", // same event name for both opt-in/opt-out; status field distinguishes
+        eventName: "consentOptIn",
         timestamp: new Date().toISOString(),
         interaction: {
           category: "Profile",
@@ -191,14 +206,11 @@
           }
         }
       };
-      sfdcInteractions.sendEvent(payload);
-      logToPage(`CONSENT EVENT: ${status}`, payload);
+      safeSendEvent(payload, `CONSENT EVENT: ${status}`);
     }
 
     // ------------------------------------------------------------
-    // Automatic page view on load — this is what the real SDK does
-    // by itself with zero code once installed; simulated here so
-    // the mock behaves the same way for local testing.
+    // Automatic page view on load
     // ------------------------------------------------------------
     window.addEventListener("load", function () {
       fireEngagementEvent("pageView", window.location.pathname || "/", {});
